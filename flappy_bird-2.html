@@ -1,0 +1,2231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlappyVerse - Ultimate Edition</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&display=swap');
+
+  :root {
+    --neon-cyan: #00f5ff;
+    --neon-pink: #ff006e;
+    --neon-gold: #ffd700;
+    --neon-green: #39ff14;
+    --dark-bg: #070714;
+    --card-bg: rgba(255,255,255,0.04);
+    --border: rgba(0,245,255,0.2);
+    --text: #e0e8ff;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: 'Exo 2', sans-serif;
+    background: var(--dark-bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ===== STARFIELD ===== */
+  #starfield {
+    position: fixed; top:0; left:0; width:100%; height:100%;
+    pointer-events: none; z-index: 0;
+    background: radial-gradient(ellipse at 20% 20%, #0d0d2b 0%, #070714 70%);
+  }
+
+  .star {
+    position: absolute; border-radius:50%;
+    background: white; animation: twinkle var(--d) infinite;
+  }
+  @keyframes twinkle {
+    0%,100%{opacity:0.2;transform:scale(1);}
+    50%{opacity:1;transform:scale(1.4);}
+  }
+
+  /* ===== SCREENS ===== */
+  .screen {
+    position: fixed; top:0; left:0; width:100%; height:100%;
+    z-index: 10; display:none; flex-direction:column;
+    align-items:center; justify-content:center;
+    background: rgba(7,7,20,0.97);
+    overflow-y: auto;
+    padding: 20px;
+  }
+  .screen.active { display: flex; }
+
+  /* ===== TITLE ===== */
+  .logo {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(2rem, 6vw, 4rem);
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--neon-cyan), var(--neon-pink), var(--neon-gold));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    text-shadow: none;
+    filter: drop-shadow(0 0 30px rgba(0,245,255,0.5));
+    letter-spacing: 4px;
+    margin-bottom: 8px;
+  }
+  .logo-sub {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 8px;
+    color: var(--neon-cyan);
+    opacity: 0.7;
+    margin-bottom: 40px;
+  }
+
+  /* ===== CARDS ===== */
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    width: 100%; max-width: 420px;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 8px 64px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+
+  .card h2 {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.2rem;
+    color: var(--neon-cyan);
+    margin-bottom: 24px;
+    letter-spacing: 2px;
+    text-align: center;
+  }
+
+  /* ===== INPUTS ===== */
+  .input-group {
+    margin-bottom: 16px;
+    position: relative;
+  }
+  .input-group label {
+    display: block;
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+  .input-group input {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(0,245,255,0.2);
+    border-radius: 8px;
+    padding: 12px 16px;
+    color: white;
+    font-family: 'Exo 2', sans-serif;
+    font-size: 0.95rem;
+    transition: all 0.3s;
+    outline: none;
+  }
+  .input-group input:focus {
+    border-color: var(--neon-cyan);
+    box-shadow: 0 0 20px rgba(0,245,255,0.15);
+    background: rgba(0,245,255,0.05);
+  }
+  .input-group .eye-btn {
+    position: absolute; right:12px; bottom:10px;
+    background:none; border:none; color:rgba(255,255,255,0.4);
+    cursor:pointer; font-size:1.1rem;
+  }
+
+  /* ===== PASSWORD STRENGTH ===== */
+  .pw-strength-bar {
+    height: 4px; border-radius: 2px;
+    background: rgba(255,255,255,0.1);
+    margin-top: 6px; overflow: hidden;
+  }
+  .pw-strength-fill {
+    height: 100%; border-radius: 2px;
+    transition: all 0.4s;
+    width: 0%;
+  }
+  .pw-strength-label {
+    font-size: 0.7rem; margin-top: 4px;
+    letter-spacing: 1px;
+  }
+  .strength-weak .pw-strength-fill { width:33%; background: var(--neon-pink); }
+  .strength-medium .pw-strength-fill { width:66%; background: var(--neon-gold); }
+  .strength-strong .pw-strength-fill { width:100%; background: var(--neon-green); }
+  .strength-weak .pw-strength-label { color: var(--neon-pink); }
+  .strength-medium .pw-strength-label { color: var(--neon-gold); }
+  .strength-strong .pw-strength-label { color: var(--neon-green); }
+
+  /* ===== BUTTONS ===== */
+  .btn {
+    width: 100%;
+    padding: 13px 24px;
+    border: none; border-radius: 8px;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-bottom: 10px;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn::before {
+    content: '';
+    position: absolute; top:0; left:-100%;
+    width:100%; height:100%;
+    background: rgba(255,255,255,0.1);
+    transition: 0.3s; skewX(-20deg);
+  }
+  .btn:hover::before { left:100%; }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--neon-cyan), #0080ff);
+    color: #000;
+    box-shadow: 0 0 24px rgba(0,245,255,0.3);
+  }
+  .btn-primary:hover { box-shadow: 0 0 40px rgba(0,245,255,0.6); transform:translateY(-1px); }
+
+  .btn-secondary {
+    background: transparent;
+    border: 1px solid rgba(0,245,255,0.3);
+    color: var(--neon-cyan);
+  }
+  .btn-secondary:hover { border-color: var(--neon-cyan); background: rgba(0,245,255,0.05); }
+
+  .btn-danger {
+    background: linear-gradient(135deg, #ff003c, #8b0000);
+    color: white;
+    box-shadow: 0 0 20px rgba(255,0,60,0.3);
+  }
+  .btn-danger:hover { box-shadow: 0 0 40px rgba(255,0,60,0.6); }
+
+  .btn-gold {
+    background: linear-gradient(135deg, var(--neon-gold), #ff8c00);
+    color: #000;
+    box-shadow: 0 0 24px rgba(255,215,0,0.3);
+  }
+
+  .btn-sm {
+    width: auto; padding: 8px 16px;
+    font-size: 0.65rem; margin-bottom: 0;
+  }
+
+  .link-btn {
+    background: none; border: none;
+    color: var(--neon-cyan); cursor: pointer;
+    font-family: 'Exo 2', sans-serif;
+    font-size: 0.85rem; text-decoration: underline;
+    opacity: 0.7;
+  }
+  .link-btn:hover { opacity: 1; }
+
+  .text-center { text-align: center; }
+  .mt-16 { margin-top: 16px; }
+  .mb-0 { margin-bottom: 0; }
+
+  /* ===== ALERT ===== */
+  .alert {
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    font-size: 0.82rem;
+    display: none;
+  }
+  .alert.show { display: block; }
+  .alert-error { background: rgba(255,0,60,0.15); border:1px solid rgba(255,0,60,0.4); color:#ff6b8a; }
+  .alert-success { background: rgba(57,255,20,0.1); border:1px solid rgba(57,255,20,0.4); color:var(--neon-green); }
+  .alert-info { background: rgba(0,245,255,0.08); border:1px solid rgba(0,245,255,0.3); color:var(--neon-cyan); }
+
+  /* ===== MAIN MENU ===== */
+  #screen-menu {
+    gap: 0;
+  }
+
+  .menu-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    width: 100%; max-width: 480px;
+    margin-top: 20px;
+  }
+  .menu-btn {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 16px;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-align: center;
+    font-family: 'Exo 2', sans-serif;
+  }
+  .menu-btn:hover {
+    border-color: var(--neon-cyan);
+    background: rgba(0,245,255,0.05);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(0,245,255,0.15);
+  }
+  .menu-btn .menu-icon { font-size: 2rem; display:block; margin-bottom: 8px; }
+  .menu-btn .menu-label {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    color: var(--neon-cyan);
+  }
+  .menu-btn.full-width { grid-column: span 2; }
+
+  .user-bar {
+    display: flex; align-items:center; justify-content:space-between;
+    width:100%; max-width:480px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 20px;
+    margin-bottom: 16px;
+  }
+  .user-bar .user-name {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.8rem;
+    color: var(--neon-gold);
+  }
+  .user-bar .user-pts {
+    font-size: 0.9rem;
+    color: var(--neon-cyan);
+    font-weight: 700;
+  }
+
+  /* ===== LEVEL SELECT ===== */
+  .level-cards {
+    display: flex; flex-direction: column;
+    gap: 16px; width:100%; max-width:480px;
+    margin-top: 16px;
+  }
+  .level-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px 24px;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex; align-items:center; justify-content:space-between;
+  }
+  .level-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+  }
+  .level-card.easy { border-color: rgba(57,255,20,0.4); }
+  .level-card.easy:hover { box-shadow: 0 8px 40px rgba(57,255,20,0.2); }
+  .level-card.hard { border-color: rgba(255,165,0,0.4); }
+  .level-card.hard:hover { box-shadow: 0 8px 40px rgba(255,165,0,0.2); }
+  .level-card.veryhard { border-color: rgba(255,0,60,0.4); }
+  .level-card.veryhard:hover { box-shadow: 0 8px 40px rgba(255,0,60,0.2); }
+
+  .level-info .level-name {
+    font-family: 'Orbitron', monospace;
+    font-size: 1rem; font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .easy .level-name { color: var(--neon-green); }
+  .hard .level-name { color: #ff9900; }
+  .veryhard .level-name { color: var(--neon-pink); }
+
+  .level-info .level-desc { font-size: 0.8rem; opacity: 0.6; }
+  .level-info .level-reward {
+    font-size: 0.75rem; margin-top: 6px;
+    color: var(--neon-gold);
+  }
+  .level-badge { font-size: 2.5rem; }
+
+  /* ===== SHOP / COLLECTION ===== */
+  .shop-tabs {
+    display: flex; gap: 8px;
+    margin-bottom: 20px;
+    width:100%; max-width:640px;
+  }
+  .shop-tab {
+    flex:1; padding:10px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 1px;
+    color: rgba(255,255,255,0.5);
+    transition: all 0.3s;
+    text-align:center;
+  }
+  .shop-tab.active {
+    border-color: var(--neon-cyan);
+    color: var(--neon-cyan);
+    background: rgba(0,245,255,0.08);
+  }
+
+  .items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px,1fr));
+    gap: 12px;
+    width:100%; max-width:640px;
+  }
+
+  .item-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 12px;
+    text-align: center;
+    transition: all 0.3s;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+  .item-card.owned { border-color: rgba(57,255,20,0.4); }
+  .item-card.selected { border-color: var(--neon-cyan); box-shadow: 0 0 20px rgba(0,245,255,0.2); }
+  .item-card.locked { opacity: 0.6; cursor: default; }
+  .item-card:hover:not(.locked) { transform:translateY(-2px); }
+
+  .item-emoji { font-size: 2.2rem; display:block; margin-bottom:8px; }
+  .item-name { font-size: 0.72rem; font-weight: 600; margin-bottom: 4px; }
+  .item-cost {
+    font-size: 0.65rem;
+    color: var(--neon-gold);
+    font-family: 'Orbitron', monospace;
+  }
+  .item-badge {
+    position: absolute; top:6px; right:6px;
+    background: var(--neon-green); color:#000;
+    border-radius: 50%; width:18px; height:18px;
+    font-size:0.6rem; display:flex; align-items:center; justify-content:center;
+    font-weight:700;
+  }
+  .item-badge.lock { background: rgba(255,255,255,0.15); color:rgba(255,255,255,0.6); }
+
+  .item-difficulty {
+    font-size: 0.6rem; margin-top: 4px;
+    padding: 2px 6px; border-radius: 4px;
+    display: inline-block;
+  }
+  .diff-easy { background: rgba(57,255,20,0.15); color:var(--neon-green); }
+  .diff-hard { background: rgba(255,153,0,0.15); color:#ff9900; }
+  .diff-veryhard { background: rgba(255,0,110,0.15); color:var(--neon-pink); }
+  .diff-3d { background: rgba(0,245,255,0.15); color:var(--neon-cyan); }
+
+  .points-bar {
+    display: flex; align-items:center; gap:8px;
+    font-size: 0.8rem;
+    padding: 10px 16px;
+    background: rgba(255,215,0,0.08);
+    border: 1px solid rgba(255,215,0,0.2);
+    border-radius: 8px;
+    margin-bottom: 16px;
+    width:100%; max-width:640px;
+  }
+
+  /* ===== GAME CANVAS ===== */
+  #screen-game {
+    padding: 0;
+    background: transparent;
+  }
+
+  #gameCanvas {
+    display: block;
+    position: fixed; top:0; left:0;
+    width:100%; height:100%;
+    z-index: 5;
+  }
+
+  /* ===== GAME HUD ===== */
+  #game-hud {
+    position: fixed; top:0; left:0; right:0;
+    z-index: 20;
+    pointer-events: none;
+    display: none;
+    padding: 16px 20px;
+  }
+  #game-hud.visible { display: flex; justify-content:space-between; align-items:flex-start; }
+
+  .hud-score {
+    font-family: 'Orbitron', monospace;
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: white;
+    text-shadow: 0 0 20px rgba(0,245,255,0.8), 0 2px 8px rgba(0,0,0,0.8);
+    line-height: 1;
+  }
+  .hud-level {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    opacity: 0.8;
+  }
+
+  .hud-controls {
+    display: flex; gap:8px;
+    pointer-events: all;
+  }
+  .hud-btn {
+    width: 42px; height: 42px;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 10px;
+    color: white; font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex; align-items:center; justify-content:center;
+    backdrop-filter: blur(10px);
+  }
+  .hud-btn:hover { background: rgba(0,245,255,0.2); border-color: var(--neon-cyan); }
+
+  /* ===== PAUSE OVERLAY ===== */
+  #pause-overlay {
+    position: fixed; top:0; left:0; right:0; bottom:0;
+    z-index: 30;
+    background: rgba(7,7,20,0.9);
+    display: none;
+    flex-direction:column;
+    align-items:center; justify-content:center;
+    backdrop-filter: blur(10px);
+  }
+  #pause-overlay.visible { display: flex; }
+  #pause-overlay h2 {
+    font-family: 'Orbitron', monospace;
+    font-size: 2rem; color: var(--neon-cyan);
+    margin-bottom: 32px;
+    letter-spacing: 4px;
+  }
+  #pause-overlay .btn { max-width: 280px; }
+
+  /* ===== GAME OVER ===== */
+  #gameover-overlay {
+    position: fixed; top:0; left:0; right:0; bottom:0;
+    z-index: 30;
+    background: rgba(7,7,20,0.95);
+    display: none;
+    flex-direction:column;
+    align-items:center; justify-content:center;
+    backdrop-filter: blur(10px);
+  }
+  #gameover-overlay.visible { display: flex; }
+
+  .gameover-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 2.5rem; font-weight: 900;
+    color: var(--neon-pink);
+    filter: drop-shadow(0 0 20px rgba(255,0,110,0.7));
+    margin-bottom: 8px;
+    letter-spacing: 4px;
+  }
+  .gameover-score-box {
+    background: var(--card-bg);
+    border: 1px solid rgba(0,245,255,0.2);
+    border-radius: 16px;
+    padding: 24px 40px;
+    text-align:center;
+    margin: 20px 0;
+  }
+  .gameover-score-box .score-val {
+    font-family: 'Orbitron', monospace;
+    font-size: 3rem;
+    color: var(--neon-cyan);
+    font-weight:900;
+  }
+  .gameover-score-box .score-label { font-size:0.8rem; opacity:0.6; letter-spacing:2px; }
+  .gameover-score-box .best-val {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.2rem;
+    color: var(--neon-gold);
+    margin-top:8px;
+  }
+  .pts-earned {
+    font-size: 0.9rem;
+    color: var(--neon-green);
+    margin-bottom: 8px;
+  }
+  .unlock-notif {
+    background: rgba(255,215,0,0.1);
+    border: 1px solid rgba(255,215,0,0.3);
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-size: 0.85rem;
+    color: var(--neon-gold);
+    margin-bottom: 12px;
+    text-align:center;
+  }
+
+  /* ===== LEADERBOARD ===== */
+  .leaderboard-entry {
+    display: flex; align-items:center; justify-content:space-between;
+    padding: 12px 16px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 8px;
+    width: 100%; max-width: 480px;
+  }
+  .lb-rank {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.1rem; font-weight:900;
+    color: var(--neon-gold);
+    width: 40px;
+  }
+  .lb-user { flex:1; font-weight:600; }
+  .lb-level {
+    font-size: 0.7rem;
+    padding: 2px 8px; border-radius:4px;
+    margin-right: 12px;
+  }
+  .lb-score {
+    font-family: 'Orbitron', monospace;
+    color: var(--neon-cyan);
+    font-weight:700;
+  }
+
+  /* ===== SETTINGS ===== */
+  .settings-row {
+    display: flex; justify-content:space-between; align-items:center;
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .settings-row:last-child { border-bottom: none; }
+  .settings-label { font-size:0.9rem; }
+  .settings-sub { font-size:0.75rem; opacity:0.5; margin-top:2px; }
+
+  .pin-display {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.2rem;
+    letter-spacing: 4px;
+    color: var(--neon-gold);
+    background: rgba(255,215,0,0.08);
+    border: 1px solid rgba(255,215,0,0.2);
+    border-radius: 8px;
+    padding: 10px 20px;
+    text-align:center;
+    margin: 12px 0;
+  }
+
+  /* ===== IMPOSSIBLE SCORE ===== */
+  .impossible-banner {
+    background: linear-gradient(135deg, rgba(255,0,110,0.15), rgba(255,215,0,0.08));
+    border: 1px solid rgba(255,0,110,0.3);
+    border-radius: 12px;
+    padding: 16px 20px;
+    text-align: center;
+    margin-top: 16px;
+    width:100%; max-width:480px;
+  }
+  .impossible-banner .imp-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    color: var(--neon-pink);
+    margin-bottom: 4px;
+  }
+  .impossible-banner .imp-score {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.8rem;
+    color: var(--neon-gold);
+    font-weight:900;
+  }
+  .impossible-banner .imp-prize {
+    font-size: 0.8rem;
+    color: var(--neon-green);
+    margin-top: 6px;
+  }
+
+  /* ===== SCROLLBAR ===== */
+  ::-webkit-scrollbar { width:4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(0,245,255,0.3); border-radius:2px; }
+
+  /* ===== SECTION HEADER ===== */
+  .section-header {
+    display: flex; align-items:center; justify-content:space-between;
+    width:100%; max-width:640px;
+    margin-bottom: 16px;
+  }
+  .section-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 1rem;
+    color: var(--neon-cyan);
+    letter-spacing: 2px;
+  }
+
+  /* ===== MODAL ===== */
+  .modal-overlay {
+    position: fixed; top:0; left:0; right:0; bottom:0;
+    z-index: 50;
+    background: rgba(7,7,20,0.9);
+    display: none; align-items:center; justify-content:center;
+    backdrop-filter: blur(8px);
+  }
+  .modal-overlay.open { display: flex; }
+  .modal { max-width: 380px; width:90%; }
+
+  /* ===== RESPONSIVE ===== */
+  @media(max-width:480px) {
+    .card { padding: 24px 20px; }
+    .menu-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* ===== ANIMATIONS ===== */
+  @keyframes float {
+    0%,100%{transform:translateY(0);}
+    50%{transform:translateY(-10px);}
+  }
+  @keyframes pulse-glow {
+    0%,100%{filter:drop-shadow(0 0 10px rgba(0,245,255,0.5));}
+    50%{filter:drop-shadow(0 0 30px rgba(0,245,255,1));}
+  }
+  @keyframes slide-in {
+    from{transform:translateY(30px);opacity:0;}
+    to{transform:translateY(0);opacity:1;}
+  }
+  .animate-in { animation: slide-in 0.4s ease forwards; }
+
+  .floating { animation: float 3s ease-in-out infinite; }
+  .pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+</style>
+</head>
+<body>
+
+<!-- Starfield -->
+<canvas id="starfield"></canvas>
+
+<!-- ============ LOGIN SCREEN ============ -->
+<div class="screen active" id="screen-login">
+  <div class="logo pulse-glow">FlappyVerse</div>
+  <div class="logo-sub">ULTIMATE EDITION</div>
+  <div class="card animate-in">
+    <h2>🚀 SIGN IN</h2>
+    <div class="alert alert-error" id="login-alert"></div>
+    <div class="input-group">
+      <label>Username</label>
+      <input type="text" id="login-user" placeholder="Enter username" autocomplete="username">
+    </div>
+    <div class="input-group">
+      <label>Password</label>
+      <input type="password" id="login-pass" placeholder="Enter password" autocomplete="current-password">
+      <button class="eye-btn" onclick="togglePw('login-pass',this)">👁️</button>
+    </div>
+    <button class="btn btn-primary" onclick="doLogin()">LAUNCH IN</button>
+    <button class="btn btn-secondary" onclick="showScreen('screen-register')">CREATE ACCOUNT</button>
+    <div class="text-center mt-16">
+      <button class="link-btn" onclick="showScreen('screen-forgot')">Forgot Password?</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ REGISTER SCREEN ============ -->
+<div class="screen" id="screen-register">
+  <div class="logo">FlappyVerse</div>
+  <div class="logo-sub">CREATE ACCOUNT</div>
+  <div class="card animate-in">
+    <h2>⚡ REGISTER</h2>
+    <div class="alert alert-error" id="reg-alert"></div>
+    <div class="input-group">
+      <label>Username</label>
+      <input type="text" id="reg-user" placeholder="Choose a username" oninput="checkUserAvail(this.value)">
+    </div>
+    <div class="input-group">
+      <label>Password</label>
+      <input type="password" id="reg-pass" placeholder="Create password" oninput="checkPwStrength(this.value)" autocomplete="new-password">
+      <button class="eye-btn" onclick="togglePw('reg-pass',this)">👁️</button>
+      <div class="pw-strength-bar" id="pw-bar"><div class="pw-strength-fill" id="pw-fill"></div></div>
+      <div class="pw-strength-label" id="pw-label"></div>
+    </div>
+    <div class="input-group">
+      <label>Confirm Password</label>
+      <input type="password" id="reg-pass2" placeholder="Confirm password" autocomplete="new-password">
+    </div>
+    <div class="alert alert-info" id="reg-pin-info" style="display:none;">
+      Your recovery PIN will be shown after registration. Keep it safe!
+    </div>
+    <button class="btn btn-primary" onclick="doRegister()">CREATE ACCOUNT</button>
+    <div class="text-center">
+      <button class="link-btn" onclick="showScreen('screen-login')">Already have an account? Sign in</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ FORGOT PASSWORD SCREEN ============ -->
+<div class="screen" id="screen-forgot">
+  <div class="logo">FlappyVerse</div>
+  <div class="card animate-in">
+    <h2>🔑 RECOVERY</h2>
+    <div class="alert alert-error" id="forgot-alert"></div>
+    <div id="forgot-step1">
+      <div class="input-group">
+        <label>Username</label>
+        <input type="text" id="forgot-user" placeholder="Enter your username">
+      </div>
+      <div class="input-group">
+        <label>8-Digit Recovery PIN</label>
+        <input type="text" id="forgot-pin" placeholder="XXXXXXXX" maxlength="8" oninput="this.value=this.value.replace(/\D/g,'')">
+      </div>
+      <button class="btn btn-primary" onclick="verifyPin()">VERIFY PIN</button>
+    </div>
+    <div id="forgot-step2" style="display:none;">
+      <div class="input-group">
+        <label>New Password</label>
+        <input type="password" id="new-pass" placeholder="New password" oninput="checkPwStrengthEl('new-pass','new-pw-bar','new-pw-fill','new-pw-label')">
+        <div class="pw-strength-bar" id="new-pw-bar"><div class="pw-strength-fill" id="new-pw-fill"></div></div>
+        <div class="pw-strength-label" id="new-pw-label"></div>
+      </div>
+      <button class="btn btn-primary" onclick="doResetPass()">RESET PASSWORD</button>
+    </div>
+    <div class="text-center mt-16">
+      <button class="link-btn" onclick="showScreen('screen-login')">← Back to Login</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MAIN MENU ============ -->
+<div class="screen" id="screen-menu">
+  <div class="logo floating">FlappyVerse</div>
+  <div class="user-bar">
+    <div>
+      <div class="user-name" id="menu-username"></div>
+      <div style="font-size:0.7rem;opacity:0.5;letter-spacing:1px;margin-top:2px;">PILOT</div>
+    </div>
+    <div class="user-pts">
+      <span id="menu-points"></span> <span style="color:var(--neon-gold);font-size:0.75rem;">PTS</span>
+    </div>
+  </div>
+  <div class="menu-grid">
+    <div class="menu-btn" onclick="showScreen('screen-levels')">
+      <span class="menu-icon">🎮</span>
+      <div class="menu-label">PLAY</div>
+    </div>
+    <div class="menu-btn" onclick="showShop()">
+      <span class="menu-icon">🏪</span>
+      <div class="menu-label">COLLECTION</div>
+    </div>
+    <div class="menu-btn" onclick="showScreen('screen-leaderboard')">
+      <span class="menu-icon">🏆</span>
+      <div class="menu-label">HIGH SCORES</div>
+    </div>
+    <div class="menu-btn" onclick="showScreen('screen-settings')">
+      <span class="menu-icon">⚙️</span>
+      <div class="menu-label">SETTINGS</div>
+    </div>
+    <div class="menu-btn full-width" onclick="doLogout()">
+      <span class="menu-icon">🚪</span>
+      <div class="menu-label">LOGOUT</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ LEVEL SELECT ============ -->
+<div class="screen" id="screen-levels">
+  <div class="logo" style="font-size:1.8rem;">SELECT LEVEL</div>
+  <div style="height:16px;"></div>
+  <div class="level-cards">
+    <div class="level-card easy" onclick="startGame('easy')">
+      <div class="level-info">
+        <div class="level-name">⚡ EASY</div>
+        <div class="level-desc">Wide gaps · Slow pipes · Relaxed mode</div>
+        <div class="level-reward">🏅 Reward: Classic Blue Bird @ 50pts</div>
+      </div>
+      <div class="level-badge">🟢</div>
+    </div>
+    <div class="level-card hard" onclick="startGame('hard')">
+      <div class="level-info">
+        <div class="level-name">🔥 HARD</div>
+        <div class="level-desc">Narrow gaps · Fast pipes · Night theme</div>
+        <div class="level-reward">🏆 Reward: Phoenix Bird @ 150pts</div>
+      </div>
+      <div class="level-badge">🟠</div>
+    </div>
+    <div class="level-card veryhard" onclick="startGame('veryhard')">
+      <div class="level-info">
+        <div class="level-name">💀 VERY HARD</div>
+        <div class="level-desc">Tiny gaps · Insane speed · Chaos mode</div>
+        <div class="level-reward">👑 Reward: 3D Dragon @ 500pts · $100 Prize @ 30,000pts (Wall appears at 25,000!)</div>
+      </div>
+      <div class="level-badge">🔴</div>
+    </div>
+  </div>
+  <div class="impossible-banner">
+    <div class="imp-title">⚠️ VERY HARD IMPOSSIBLE SCORE ⚠️</div>
+    <div class="imp-score">30,000</div>
+    <div class="imp-prize">🏆 Whoever reaches 30,000 gets $100 REAL CASH! 🏆</div>
+    <div style="font-size:0.7rem;opacity:0.5;margin-top:6px;">Note: An impossible wall appears at 25,000 — even the best players don't survive past 30,000. Good luck!</div>
+  </div>
+  <div style="height:20px;"></div>
+  <button class="btn btn-secondary" style="max-width:280px;" onclick="showScreen('screen-menu')">← BACK</button>
+</div>
+
+<!-- ============ SHOP / COLLECTION ============ -->
+<div class="screen" id="screen-shop" style="justify-content:flex-start;padding-top:40px;">
+  <div class="section-header">
+    <div class="section-title">🏪 COLLECTION</div>
+    <button class="btn btn-secondary btn-sm" onclick="showScreen('screen-menu')">← BACK</button>
+  </div>
+  <div class="points-bar">
+    <span>💎</span>
+    <span>Your Points: <strong id="shop-pts" style="color:var(--neon-gold);"></strong></span>
+  </div>
+  <div class="shop-tabs">
+    <div class="shop-tab active" onclick="shopTab('birds',this)">🐦 BIRDS</div>
+    <div class="shop-tab" onclick="shopTab('backgrounds',this)">🌅 THEMES</div>
+    <div class="shop-tab" onclick="shopTab('pipes',this)">🎋 PIPES</div>
+  </div>
+  <div class="items-grid" id="shop-grid"></div>
+</div>
+
+<!-- ============ LEADERBOARD ============ -->
+<div class="screen" id="screen-leaderboard" style="justify-content:flex-start;padding-top:40px;">
+  <div class="section-header">
+    <div class="section-title">🏆 HIGH SCORES</div>
+    <button class="btn btn-secondary btn-sm" onclick="showScreen('screen-menu')">← BACK</button>
+  </div>
+  <div id="lb-content" style="width:100%;max-width:480px;"></div>
+</div>
+
+<!-- ============ SETTINGS ============ -->
+<div class="screen" id="screen-settings" style="justify-content:flex-start;padding-top:40px;">
+  <div class="section-header">
+    <div class="section-title">⚙️ SETTINGS</div>
+    <button class="btn btn-secondary btn-sm" onclick="showScreen('screen-menu')">← BACK</button>
+  </div>
+  <div class="card animate-in" style="max-width:480px;width:100%;">
+    <div class="settings-row">
+      <div>
+        <div class="settings-label">Account</div>
+        <div class="settings-sub" id="settings-username"></div>
+      </div>
+    </div>
+    <div class="settings-row">
+      <div>
+        <div class="settings-label">Recovery PIN</div>
+        <div class="settings-sub">Keep this safe — used to reset password</div>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="showPin()">SHOW</button>
+    </div>
+    <div class="settings-row">
+      <div>
+        <div class="settings-label">Change Password</div>
+        <div class="settings-sub">Your PIN will be regenerated</div>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="showScreen('screen-change-pass')">CHANGE</button>
+    </div>
+    <div class="settings-row">
+      <div>
+        <div class="settings-label" style="color:var(--neon-pink);">Delete Account</div>
+        <div class="settings-sub">This cannot be undone</div>
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="confirmDelete()">DELETE</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ CHANGE PASSWORD ============ -->
+<div class="screen" id="screen-change-pass">
+  <div class="logo" style="font-size:1.8rem;">CHANGE PASSWORD</div>
+  <div class="card animate-in">
+    <div class="alert alert-error" id="cp-alert"></div>
+    <div class="alert alert-success" id="cp-success"></div>
+    <div class="input-group">
+      <label>Current Password</label>
+      <input type="password" id="cp-current" placeholder="Current password">
+    </div>
+    <div class="input-group">
+      <label>New Password</label>
+      <input type="password" id="cp-new" placeholder="New password" oninput="checkPwStrengthEl('cp-new','cp-pw-bar','cp-pw-fill','cp-pw-label')">
+      <div class="pw-strength-bar" id="cp-pw-bar"><div class="pw-strength-fill" id="cp-pw-fill"></div></div>
+      <div class="pw-strength-label" id="cp-pw-label"></div>
+    </div>
+    <div id="new-pin-display" style="display:none;">
+      <div class="alert alert-success show">Password changed! New recovery PIN:</div>
+      <div class="pin-display" id="cp-new-pin"></div>
+    </div>
+    <button class="btn btn-primary" onclick="doChangePass()">UPDATE PASSWORD</button>
+    <button class="btn btn-secondary" onclick="showScreen('screen-settings')">← BACK</button>
+  </div>
+</div>
+
+<!-- ============ GAME CANVAS ============ -->
+<div class="screen" id="screen-game">
+  <canvas id="gameCanvas"></canvas>
+</div>
+
+<!-- ============ GAME HUD ============ -->
+<div id="game-hud">
+  <div>
+    <div class="hud-score" id="hud-score">0</div>
+    <div class="hud-level" id="hud-level"></div>
+  </div>
+  <div class="hud-controls">
+    <button class="hud-btn" onclick="togglePause()" title="Pause">⏸</button>
+    <button class="hud-btn" onclick="restartGame()" title="Restart">🔄</button>
+    <button class="hud-btn" id="sound-btn" onclick="toggleSound()" title="Sound">🔊</button>
+    <button class="hud-btn" onclick="goHome()" title="Home">🏠</button>
+  </div>
+</div>
+
+<!-- ============ PAUSE OVERLAY ============ -->
+<div id="pause-overlay">
+  <h2>⏸ PAUSED</h2>
+  <button class="btn btn-primary" onclick="togglePause()">▶ RESUME</button>
+  <button class="btn btn-secondary" onclick="restartGame()">🔄 RESTART</button>
+  <button class="btn btn-secondary" onclick="goHome()">🏠 HOME</button>
+</div>
+
+<!-- ============ GAME OVER ============ -->
+<div id="gameover-overlay">
+  <div class="gameover-title">GAME OVER</div>
+  <div id="unlock-notifs"></div>
+  <div class="gameover-score-box">
+    <div class="score-label">SCORE</div>
+    <div class="score-val" id="go-score">0</div>
+    <div class="best-val">🏆 BEST: <span id="go-best">0</span></div>
+  </div>
+  <div class="pts-earned" id="go-pts"></div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:320px;">
+    <button class="btn btn-primary" style="flex:1;min-width:120px;" onclick="restartGame()">🔄 RETRY</button>
+    <button class="btn btn-secondary" style="flex:1;min-width:120px;" onclick="goHome()">🏠 HOME</button>
+  </div>
+</div>
+
+<!-- ============ PIN MODAL ============ -->
+<div class="modal-overlay" id="pin-modal">
+  <div class="card modal">
+    <h2>🔑 RECOVERY PIN</h2>
+    <div style="font-size:0.8rem;opacity:0.6;margin-bottom:12px;text-align:center;">Store this safely. You cannot change it.</div>
+    <div class="pin-display" id="modal-pin"></div>
+    <button class="btn btn-secondary mt-16" onclick="closeModal('pin-modal')">CLOSE</button>
+  </div>
+</div>
+
+<!-- ============ DELETE CONFIRM MODAL ============ -->
+<div class="modal-overlay" id="delete-modal">
+  <div class="card modal">
+    <h2 style="color:var(--neon-pink);">⚠️ DELETE ACCOUNT</h2>
+    <div style="text-align:center;margin-bottom:20px;opacity:0.7;">This will permanently delete your account and all progress. This cannot be undone.</div>
+    <div class="input-group">
+      <label>Enter your password to confirm</label>
+      <input type="password" id="del-pass" placeholder="Your password">
+    </div>
+    <div class="alert alert-error" id="del-alert"></div>
+    <button class="btn btn-danger" onclick="doDeleteAccount()">DELETE FOREVER</button>
+    <button class="btn btn-secondary" onclick="closeModal('delete-modal')">CANCEL</button>
+  </div>
+</div>
+
+<script>
+// ╔══════════════════════════════════════════════════════════╗
+// ║                    DATA DEFINITIONS                      ║
+// ╚══════════════════════════════════════════════════════════╝
+
+const BIRDS = [
+  { id:'bird_default', name:'Cheep', emoji:'🐦', cost:0, unlock:'default', diff:'easy', is3d:false, desc:'The classic starter bird' },
+  { id:'bird_blue', name:'Blue Jay', emoji:'🐦‍⬛', cost:0, unlock:'easy_50', diff:'easy', is3d:false, desc:'Unlock: 50pts in Easy' },
+  { id:'bird_phoenix', name:'Phoenix', emoji:'🦅', cost:0, unlock:'hard_150', diff:'hard', is3d:false, desc:'Unlock: 150pts in Hard' },
+  { id:'bird_owl', name:'Night Owl', emoji:'🦉', cost:200, unlock:'points', diff:'hard', is3d:false, desc:'Purchase with 200pts' },
+  { id:'bird_parrot', name:'Rainbow', emoji:'🦜', cost:300, unlock:'points', diff:'hard', is3d:false, desc:'Purchase with 300pts' },
+  { id:'bird_eagle', name:'War Eagle', emoji:'🦁', cost:0, unlock:'veryhard_500', diff:'veryhard', is3d:false, desc:'Unlock: 500pts in Very Hard' },
+  { id:'bird_dragon_3d', name:'3D Dragon', emoji:'🐲', cost:0, unlock:'veryhard_2000', diff:'3d', is3d:true, desc:'🔥 Unlock: 2000pts in Very Hard!' },
+  { id:'bird_cyber_3d', name:'3D CyberBird', emoji:'🤖', cost:0, unlock:'veryhard_5000', diff:'3d', is3d:true, desc:'🚀 Unlock: 5000pts in Very Hard!' },
+  { id:'bird_cosmic_3d', name:'3D Cosmic', emoji:'🌌', cost:0, unlock:'veryhard_15000', diff:'3d', is3d:true, desc:'👑 Unlock: 15000pts in Very Hard - Nearly Impossible!' },
+];
+
+const BACKGROUNDS = [
+  { id:'bg_day', name:'Day Sky', emoji:'☀️', cost:0, unlock:'default', theme:'Day & Free', desc:'Default bright sky' },
+  { id:'bg_night', name:'Night City', emoji:'🌃', cost:0, unlock:'hard_50', theme:'Night', desc:'Unlock: 50pts in Hard' },
+  { id:'bg_sunset', name:'Sunset', emoji:'🌅', cost:150, unlock:'points', theme:'Free', desc:'Purchase with 150pts' },
+  { id:'bg_storm', name:'Thunderstorm', emoji:'⛈️', cost:250, unlock:'points', theme:'Free', desc:'Purchase with 250pts' },
+  { id:'bg_space', name:'Deep Space', emoji:'🌌', cost:0, unlock:'veryhard_300', theme:'Very Hard', desc:'Unlock: 300pts in Very Hard' },
+  { id:'bg_neon', name:'Neon City', emoji:'🏙️', cost:500, unlock:'points', theme:'Free', desc:'Purchase with 500pts' },
+  { id:'bg_aurora', name:'Aurora', emoji:'🌈', cost:0, unlock:'veryhard_1000', theme:'Very Hard', desc:'Unlock: 1000pts in Very Hard' },
+  { id:'bg_volcano', name:'Volcano', emoji:'🌋', cost:0, unlock:'veryhard_3000', theme:'Very Hard', desc:'Unlock: 3000pts in Very Hard!' },
+];
+
+const PIPES = [
+  { id:'pipe_green', name:'Classic Green', emoji:'🎋', cost:0, unlock:'default', desc:'Good old green pipes' },
+  { id:'pipe_gold', name:'Golden', emoji:'🏆', cost:100, unlock:'points', desc:'Purchase with 100pts' },
+  { id:'pipe_crystal', name:'Crystal', emoji:'💎', cost:200, unlock:'points', desc:'Purchase with 200pts' },
+  { id:'pipe_fire', name:'Inferno', emoji:'🔥', cost:0, unlock:'veryhard_100', desc:'Unlock: 100pts in Very Hard' },
+  { id:'pipe_neon', name:'Neon Pink', emoji:'💜', cost:400, unlock:'points', desc:'Purchase with 400pts' },
+  { id:'pipe_ice', name:'Ice', emoji:'❄️', cost:0, unlock:'hard_200', desc:'Unlock: 200pts in Hard' },
+];
+
+const LEVELS = {
+  easy:     { name:'EASY',      pipeSpeed:2.2, gravity:0.38, gapSize:185, pipeInterval:95,  ptsPerPipe:1,  color:'#39ff14' },
+  hard:     { name:'HARD',      pipeSpeed:3.4, gravity:0.50, gapSize:148, pipeInterval:72,  ptsPerPipe:3,  color:'#ff9900' },
+  veryhard: { name:'VERY HARD', pipeSpeed:5.2, gravity:0.68, gapSize:118, pipeInterval:55,  ptsPerPipe:10, color:'#ff006e' }
+};
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║                       STORAGE                            ║
+// ╚══════════════════════════════════════════════════════════╝
+
+function getDB() {
+  try { return JSON.parse(localStorage.getItem('flappyverse_db') || '{}'); } catch { return {}; }
+}
+function saveDB(db) { localStorage.setItem('flappyverse_db', JSON.stringify(db)); }
+function getUsers() { return getDB().users || {}; }
+function saveUsers(u) { const db=getDB(); db.users=u; saveDB(db); }
+function getHighScores() { return getDB().highscores || {}; }
+function saveHighScores(h) { const db=getDB(); db.highscores=h; saveDB(db); }
+
+function genPin() {
+  return String(Math.floor(10000000 + Math.random()*89999999));
+}
+function genId() { return Math.random().toString(36).substr(2,9); }
+
+// Current session
+let currentUser = null;
+
+function getUserData() {
+  if(!currentUser) return null;
+  return getUsers()[currentUser] || null;
+}
+function saveUserData(data) {
+  const users = getUsers();
+  users[currentUser] = data;
+  saveUsers(users);
+}
+
+function getDefaultUserData(username, password) {
+  return {
+    username,
+    password,
+    pin: genPin(),
+    points: 0,
+    scores: { easy: 0, hard: 0, veryhard: 0 },
+    unlockedBirds: ['bird_default'],
+    unlockedBgs: ['bg_day'],
+    unlockedPipes: ['pipe_green'],
+    selectedBird: 'bird_default',
+    selectedBg: 'bg_day',
+    selectedPipe: 'pipe_green',
+  };
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║                       AUTH                               ║
+// ╚══════════════════════════════════════════════════════════╝
+
+function showAlert(id, msg, type='error') {
+  const el = document.getElementById(id);
+  el.className = `alert alert-${type} show`;
+  el.textContent = msg;
+}
+function hideAlert(id) {
+  document.getElementById(id).className = 'alert';
+}
+
+function doLogin() {
+  const user = document.getElementById('login-user').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const users = getUsers();
+  if(!user || !pass) { showAlert('login-alert','Please fill all fields'); return; }
+  if(!users[user]) { showAlert('login-alert','Username not found'); return; }
+  if(users[user].password !== pass) { showAlert('login-alert','Incorrect password'); return; }
+  currentUser = user;
+  openMenu();
+}
+
+function doRegister() {
+  const user = document.getElementById('reg-user').value.trim();
+  const pass = document.getElementById('reg-pass').value;
+  const pass2 = document.getElementById('reg-pass2').value;
+  const users = getUsers();
+  if(!user || !pass || !pass2) { showAlert('reg-alert','Please fill all fields'); return; }
+  if(user.length < 3) { showAlert('reg-alert','Username must be at least 3 characters'); return; }
+  if(users[user]) { showAlert('reg-alert','Username already taken! Choose another.'); return; }
+  if(pass !== pass2) { showAlert('reg-alert','Passwords do not match'); return; }
+  if(pass.length < 6) { showAlert('reg-alert','Password must be at least 6 characters'); return; }
+  const data = getDefaultUserData(user, pass);
+  users[user] = data;
+  saveUsers(users);
+  currentUser = user;
+  // Show pin after registration
+  alert(`✅ Account created!\n\n🔑 Your Recovery PIN: ${data.pin}\n\nSave this somewhere safe — you'll need it if you forget your password!`);
+  openMenu();
+}
+
+function verifyPin() {
+  const user = document.getElementById('forgot-user').value.trim();
+  const pin = document.getElementById('forgot-pin').value.trim();
+  const users = getUsers();
+  hideAlert('forgot-alert');
+  if(!users[user]) { showAlert('forgot-alert','Username not found'); return; }
+  if(users[user].pin !== pin) { showAlert('forgot-alert','Incorrect PIN'); return; }
+  document.getElementById('forgot-step1').style.display='none';
+  document.getElementById('forgot-step2').style.display='block';
+  document.getElementById('forgot-step2').dataset.user = user;
+}
+
+function doResetPass() {
+  const user = document.getElementById('forgot-step2').dataset.user;
+  const newPass = document.getElementById('new-pass').value;
+  if(!newPass || newPass.length < 6) { showAlert('forgot-alert','Password must be at least 6 characters'); return; }
+  const users = getUsers();
+  const newPin = genPin();
+  users[user].password = newPass;
+  users[user].pin = newPin;
+  saveUsers(users);
+  alert(`✅ Password reset successfully!\n\n🔑 New Recovery PIN: ${newPin}\n\nSave this — your old PIN no longer works!`);
+  showScreen('screen-login');
+  document.getElementById('forgot-step1').style.display='block';
+  document.getElementById('forgot-step2').style.display='none';
+}
+
+function doChangePass() {
+  const cur = document.getElementById('cp-current').value;
+  const newP = document.getElementById('cp-new').value;
+  const ud = getUserData();
+  hideAlert('cp-alert'); hideAlert('cp-success');
+  if(!cur || !newP) { showAlert('cp-alert','Please fill all fields'); return; }
+  if(ud.password !== cur) { showAlert('cp-alert','Current password incorrect'); return; }
+  if(newP.length < 6) { showAlert('cp-alert','New password must be at least 6 characters'); return; }
+  const newPin = genPin();
+  ud.password = newP;
+  ud.pin = newPin;
+  saveUserData(ud);
+  document.getElementById('cp-new-pin').textContent = newPin;
+  document.getElementById('new-pin-display').style.display='block';
+  showAlert('cp-success','Password updated successfully!','success');
+}
+
+function doLogout() {
+  currentUser = null;
+  showScreen('screen-login');
+}
+
+function showPin() {
+  const ud = getUserData();
+  document.getElementById('modal-pin').textContent = ud.pin;
+  openModal('pin-modal');
+}
+
+function confirmDelete() { openModal('delete-modal'); }
+
+function doDeleteAccount() {
+  const pass = document.getElementById('del-pass').value;
+  const ud = getUserData();
+  if(ud.password !== pass) { showAlert('del-alert','Incorrect password'); return; }
+  const users = getUsers();
+  delete users[currentUser];
+  saveUsers(users);
+  closeModal('delete-modal');
+  currentUser = null;
+  showScreen('screen-login');
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║                    UI HELPERS                            ║
+// ╚══════════════════════════════════════════════════════════╝
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.getElementById('game-hud').classList.remove('visible');
+}
+
+function openMenu() {
+  const ud = getUserData();
+  document.getElementById('menu-username').textContent = ud.username.toUpperCase();
+  document.getElementById('menu-points').textContent = ud.points;
+  document.getElementById('settings-username').textContent = ud.username;
+  showScreen('screen-menu');
+}
+
+function togglePw(id, btn) {
+  const inp = document.getElementById(id);
+  if(inp.type==='password') { inp.type='text'; btn.textContent='🙈'; }
+  else { inp.type='password'; btn.textContent='👁️'; }
+}
+
+function checkPwStrength(val) {
+  checkPwStrengthEl('reg-pass','pw-bar','pw-fill','pw-label');
+}
+
+function checkPwStrengthEl(inputId, barId, fillId, labelId) {
+  const val = document.getElementById(inputId).value;
+  const bar = document.getElementById(barId);
+  const label = document.getElementById(labelId);
+  bar.className = 'pw-strength-bar';
+  if(!val) { label.textContent=''; return; }
+  let strength = 0;
+  if(val.length >= 8) strength++;
+  if(/[A-Z]/.test(val)) strength++;
+  if(/[0-9]/.test(val)) strength++;
+  if(/[^A-Za-z0-9]/.test(val)) strength++;
+  if(strength <= 1) { bar.className='pw-strength-bar strength-weak'; label.textContent='WEAK'; }
+  else if(strength <= 2) { bar.className='pw-strength-bar strength-medium'; label.textContent='MEDIUM'; }
+  else { bar.className='pw-strength-bar strength-strong'; label.textContent='STRONG'; }
+}
+
+function checkUserAvail(val) {
+  document.getElementById('reg-pin-info').style.display = val.length >= 3 ? 'block' : 'none';
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║                      SHOP                               ║
+// ╚══════════════════════════════════════════════════════════╝
+
+let currentShopTab = 'birds';
+
+function showShop() {
+  currentShopTab = 'birds';
+  document.querySelectorAll('.shop-tab').forEach((t,i) => t.classList.toggle('active', i===0));
+  renderShop();
+  showScreen('screen-shop');
+}
+
+function shopTab(tab, el) {
+  currentShopTab = tab;
+  document.querySelectorAll('.shop-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderShop();
+}
+
+function renderShop() {
+  const ud = getUserData();
+  document.getElementById('shop-pts').textContent = ud.points;
+  const grid = document.getElementById('shop-grid');
+  grid.innerHTML = '';
+  let items, ownedKey, selectedKey;
+  if(currentShopTab==='birds') { items=BIRDS; ownedKey='unlockedBirds'; selectedKey='selectedBird'; }
+  else if(currentShopTab==='backgrounds') { items=BACKGROUNDS; ownedKey='unlockedBgs'; selectedKey='selectedBg'; }
+  else { items=PIPES; ownedKey='unlockedPipes'; selectedKey='selectedPipe'; }
+
+  items.forEach(item => {
+    const owned = ud[ownedKey].includes(item.id);
+    const selected = ud[selectedKey] === item.id;
+    const canUnlock = checkUnlock(item, ud);
+    const locked = !owned && !canUnlock;
+    const div = document.createElement('div');
+    div.className = `item-card ${owned?'owned':''} ${selected?'selected':''} ${locked&&!owned?'locked':''}`;
+    
+    let diffClass = item.diff ? `diff-${item.diff}` : (item.theme ? 'diff-easy' : '');
+    let diffLabel = item.diff || item.theme || '';
+    
+    div.innerHTML = `
+      <div class="item-badge ${owned?'':'lock'}">${owned?'✓':'🔒'}</div>
+      <span class="item-emoji">${item.emoji}</span>
+      <div class="item-name">${item.name}</div>
+      <div class="${diffClass} item-difficulty">${diffLabel}</div>
+      <div class="item-cost" style="margin-top:4px;font-size:0.68rem;opacity:0.8;">${item.desc}</div>
+      ${!owned && item.cost>0 ? `<div class="item-cost" style="margin-top:4px;">💎 ${item.cost} pts</div>` : ''}
+      ${owned && !selected ? '<div style="font-size:0.65rem;color:var(--neon-cyan);margin-top:6px;">TAP TO SELECT</div>' : ''}
+      ${selected ? '<div style="font-size:0.65rem;color:var(--neon-green);margin-top:6px;">✓ SELECTED</div>' : ''}
+    `;
+    if(owned) {
+      div.onclick = () => selectItem(item, ownedKey, selectedKey);
+    } else if(item.cost > 0 && ud.points >= item.cost) {
+      div.onclick = () => purchaseItem(item, ownedKey, selectedKey);
+      div.style.cursor='pointer';
+      div.querySelector('.item-cost').style.color='var(--neon-green)';
+    }
+    grid.appendChild(div);
+  });
+}
+
+function checkUnlock(item, ud) {
+  if(item.unlock==='default') return true;
+  if(item.unlock==='points') return ud.points >= item.cost;
+  if(item.unlock.startsWith('easy_')) return ud.scores.easy >= parseInt(item.unlock.split('_')[1]);
+  if(item.unlock.startsWith('hard_')) return ud.scores.hard >= parseInt(item.unlock.split('_')[1]);
+  if(item.unlock.startsWith('veryhard_')) return ud.scores.veryhard >= parseInt(item.unlock.split('_')[1]);
+  return false;
+}
+
+function selectItem(item, ownedKey, selectedKey) {
+  const ud = getUserData();
+  ud[selectedKey] = item.id;
+  saveUserData(ud);
+  renderShop();
+}
+
+function purchaseItem(item, ownedKey, selectedKey) {
+  const ud = getUserData();
+  if(ud.points < item.cost) { alert('Not enough points!'); return; }
+  if(ud[ownedKey].includes(item.id)) return;
+  ud.points -= item.cost;
+  ud[ownedKey].push(item.id);
+  ud[selectedKey] = item.id;
+  saveUserData(ud);
+  renderShop();
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║                   LEADERBOARD                            ║
+// ╚══════════════════════════════════════════════════════════╝
+
+function showLeaderboard() {
+  const hs = getHighScores();
+  const container = document.getElementById('lb-content');
+  container.innerHTML = '';
+
+  ['easy','hard','veryhard'].forEach(level => {
+    const levelData = LEVELS[level];
+    const header = document.createElement('div');
+    header.style.cssText = `font-family:Orbitron,monospace;font-size:0.8rem;letter-spacing:2px;color:${levelData.color};margin:16px 0 8px;`;
+    header.textContent = `— ${levelData.name} MODE —`;
+    container.appendChild(header);
+
+    const entries = Object.entries(hs[level]||{})
+      .sort((a,b)=>b[1]-a[1]).slice(0,5);
+    
+    if(entries.length===0) {
+      const empty = document.createElement('div');
+      empty.style.cssText='opacity:0.4;font-size:0.8rem;padding:8px 0;';
+      empty.textContent='No scores yet — be the first!';
+      container.appendChild(empty);
+    }
+    entries.forEach(([user,score],i) => {
+      const div = document.createElement('div');
+      div.className='leaderboard-entry';
+      div.innerHTML=`
+        <div class="lb-rank">${['🥇','🥈','🥉','4.','5.'][i]}</div>
+        <div class="lb-user">${user}</div>
+        <div class="lb-level diff-${level}" style="padding:2px 8px;border-radius:4px;">${levelData.name}</div>
+        <div class="lb-score">${score.toLocaleString()}</div>
+      `;
+      container.appendChild(div);
+    });
+  });
+
+  showScreen('screen-leaderboard');
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║                     GAME ENGINE                          ║
+// ╚══════════════════════════════════════════════════════════╝
+
+let canvas, ctx;
+let gameRunning = false;
+let gamePaused = false;
+let currentLevel = 'easy';
+let animFrame;
+let score = 0;
+let frame = 0;
+let bird, pipes;
+let wall = null;
+let wallPressure = 0;
+let decoyBirds = [];
+
+const CANVAS_W = () => canvas.width;
+const CANVAS_H = () => canvas.height;
+
+function initCanvas() {
+  canvas = document.getElementById('gameCanvas');
+  ctx = canvas.getContext('2d');
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+}
+
+function resizeCanvas() {
+  if(!canvas) return;
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+
+function startGame(level) {
+  currentLevel = level;
+  showScreen('screen-game');
+  document.getElementById('game-hud').classList.add('visible');
+  document.getElementById('hud-level').textContent = LEVELS[level].name + ' MODE';
+  document.getElementById('gameover-overlay').classList.remove('visible');
+  document.getElementById('pause-overlay').classList.remove('visible');
+  initCanvas();
+  resetGame();
+  gameRunning = true;
+  gamePaused = false;
+  startBgMusic();
+  
+  canvas.addEventListener('click', flapBird);
+  document.addEventListener('keydown', onKey);
+  gameLoop();
+}
+
+function resetGame() {
+  score = 0;
+  frame = 0;
+  document.getElementById('hud-score').textContent = '0';
+  
+  const ud = getUserData();
+  const birdData = BIRDS.find(b=>b.id===ud.selectedBird) || BIRDS[0];
+  
+  bird = {
+    x: CANVAS_W() * 0.2,
+    y: CANVAS_H() / 2,
+    vy: 0,
+    size: 18,
+    rotation: 0,
+    emoji: birdData.emoji,
+    is3d: birdData.is3d,
+    trail: [],
+    alive: true,
+    flapAnim: 0,
+  };
+  pipes = [];
+  wall = null;
+  wallPressure = 0;
+  decoyBirds = [];
+}
+
+function flapBird(e) {
+  if(!gameRunning || gamePaused) return;
+  if(!bird.alive) return;
+  bird.vy = -8;
+  bird.flapAnim = 10;
+  soundFlap();
+}
+
+function onKey(e) {
+  if(e.code==='Space'||e.code==='ArrowUp') { e.preventDefault(); flapBird(); }
+  if(e.code==='Escape') togglePause();
+}
+
+function togglePause() {
+  gamePaused = !gamePaused;
+  const po = document.getElementById('pause-overlay');
+  if(gamePaused) { po.classList.add('visible'); cancelAnimationFrame(animFrame); stopBgMusic(); soundButton(); }
+  else { po.classList.remove('visible'); startBgMusic(); gameLoop(); }
+}
+
+function restartGame() {
+  document.getElementById('gameover-overlay').classList.remove('visible');
+  document.getElementById('pause-overlay').classList.remove('visible');
+  gamePaused = false;
+  cancelAnimationFrame(animFrame);
+  resetGame();
+  gameRunning = true;
+  gameLoop();
+}
+
+function goHome() {
+  stopBgMusic();
+  gameRunning = false;
+  cancelAnimationFrame(animFrame);
+  document.getElementById('gameover-overlay').classList.remove('visible');
+  document.getElementById('pause-overlay').classList.remove('visible');
+  document.getElementById('game-hud').classList.remove('visible');
+  canvas.removeEventListener('click', flapBird);
+  document.removeEventListener('keydown', onKey);
+  openMenu();
+}
+
+function gameLoop() {
+  if(!gameRunning || gamePaused) return;
+  update();
+  draw();
+  animFrame = requestAnimationFrame(gameLoop);
+}
+
+function update() {
+  const lv = LEVELS[currentLevel];
+  frame++;
+
+  // Bird physics
+  bird.vy += lv.gravity;
+  bird.y += bird.vy;
+  bird.rotation = 0;
+  if(bird.flapAnim > 0) bird.flapAnim--;
+
+  // No trail
+
+  // Ceiling/floor death
+  if(bird.y < 0 || bird.y > CANVAS_H()) { endGame(); return; }
+
+  // === IMPOSSIBLE WALL at 25000 (very hard only) ===
+  // Wall slides in from right and stays — bird cannot pass
+  if(currentLevel === 'veryhard' && score >= 25000) {
+    const wallTargetX = CANVAS_W() * 0.72;
+    if(!wall) {
+      wall = { x: CANVAS_W() + 100, targetX: wallTargetX, width: 28, active: true, flash: 0 };
+    }
+    // Slide wall in
+    if(wall.x > wall.targetX) {
+      wall.x -= 6;
+      if(wall.x < wall.targetX) wall.x = wall.targetX;
+    }
+    wall.flash = (wall.flash + 1) % 30;
+
+    // Bird cannot pass wall
+    const birdRight = bird.x + bird.size * 0.6;
+    if(birdRight >= wall.x - wall.width/2) {
+      bird.x = wall.x - wall.width/2 - bird.size * 0.6 - 1;
+      // If bird is pushed into a pipe or stuck, damage them — screen shakes
+      wallPressure = (wallPressure || 0) + 1;
+      if(wallPressure % 8 === 1) soundWallHit();
+      if(wallPressure > 35) {
+        endGame(); return;
+      }
+    } else {
+      wallPressure = Math.max(0, (wallPressure||0) - 1);
+    }
+
+
+
+
+
+  // === SCORE-BASED difficulty escalation beyond 25000 ===
+  let speedMult = 1;
+  let gravMult = 1;
+  if(currentLevel === 'veryhard' && score >= 25000) {
+    const over = score - 25000;
+    speedMult = 1 + over / 8000;   // ramps up fast — basically impossible by 30000
+    gravMult  = 1 + over / 10000;
+  }
+  const effectiveSpeed = lv.pipeSpeed * speedMult;
+  const effectiveGrav  = lv.gravity * gravMult;
+
+  bird.vy += (effectiveGrav - lv.gravity); // extra gravity on top
+
+  // Spawn pipes
+  const spawnInterval = currentLevel === 'veryhard' && score >= 25000
+    ? Math.max(28, lv.pipeInterval - Math.floor((score-25000)/500))
+    : lv.pipeInterval;
+
+  if(frame % spawnInterval === 0) {
+    const ud = getUserData();
+    const pipeData = PIPES.find(p=>p.id===ud.selectedPipe) || PIPES[0];
+
+    // Beyond 25000: spawn impossible pipes — very tiny gaps, sometimes paired side-by-side
+    let gapSize = lv.gapSize;
+    if(currentLevel === 'veryhard' && score >= 25000) {
+      const shrink = Math.min(50, Math.floor((score-25000)/300));
+      gapSize = Math.max(68, lv.gapSize - shrink);
+      // Occasionally spawn a double pipe (two pairs close together — almost no way through)
+      if(Math.random() < 0.35) {
+        const gapY1 = 60 + Math.random() * (CANVAS_H() - gapSize - 120);
+        pipes.push({ x: CANVAS_W()+50, gapY: gapY1, gapSize, scored:false, impossible:true, speed: effectiveSpeed });
+        const gapY2 = 60 + Math.random() * (CANVAS_H() - gapSize - 120);
+        pipes.push({ x: CANVAS_W()+130, gapY: gapY2, gapSize, scored:false, impossible:true, speed: effectiveSpeed });
+        return;
+      }
+    }
+    const gapY = 80 + Math.random() * (CANVAS_H() - gapSize - 160);
+    pipes.push({ x: CANVAS_W()+50, gapY, gapSize, scored:false, impossible: currentLevel==='veryhard'&&score>=25000, speed: effectiveSpeed });
+  }
+
+  // Move pipes
+  const dead = pipes.some(p => {
+    p.x -= (p.speed || lv.pipeSpeed);
+    // Score
+    if(!p.scored && p.x + 30 < bird.x) {
+      p.scored = true;
+      score += lv.ptsPerPipe;
+      document.getElementById('hud-score').textContent = score;
+      soundScore();
+    }
+    // Collision
+    const birdLeft = bird.x - bird.size*0.55;
+    const birdRight = bird.x + bird.size*0.55;
+    const birdTop = bird.y - bird.size*0.55;
+    const birdBottom = bird.y + bird.size*0.55;
+    const pipeLeft = p.x - 30;
+    const pipeRight = p.x + 30;
+
+    if(birdRight > pipeLeft && birdLeft < pipeRight) {
+      if(birdTop < p.gapY || birdBottom > p.gapY + p.gapSize) {
+        return true;
+      }
+    }
+    return false;
+  });
+  if(dead) { endGame(); return; }
+
+  pipes = pipes.filter(p => p.x > -80);
+}
+
+function draw() {
+  const ud = getUserData();
+  const bg = BACKGROUNDS.find(b=>b.id===ud.selectedBg) || BACKGROUNDS[0];
+  const lv = LEVELS[currentLevel];
+
+  // === BACKGROUND ===
+  drawBackground(bg.id);
+
+  // === PIPES ===
+  const pipeData = PIPES.find(p=>p.id===ud.selectedPipe) || PIPES[0];
+  pipes.forEach(p => drawPipe(p, pipeData, lv));
+
+  // === IMPOSSIBLE WALL ===
+  if(wall && wall.active) {
+    const W = CANVAS_H();
+    const pulse = Math.sin(frame * 0.18) * 0.5 + 0.5;
+    // Ominous red wall — solid barrier
+    const wallGrad = ctx.createLinearGradient(wall.x - wall.width, 0, wall.x + wall.width, 0);
+    wallGrad.addColorStop(0, 'rgba(180,0,0,0)');
+    wallGrad.addColorStop(0.3, `rgba(255,0,40,${0.85 + pulse*0.15})`);
+    wallGrad.addColorStop(0.7, `rgba(255,0,40,${0.85 + pulse*0.15})`);
+    wallGrad.addColorStop(1, 'rgba(180,0,0,0)');
+    ctx.fillStyle = wallGrad;
+    ctx.fillRect(wall.x - wall.width, 0, wall.width * 2, CANVAS_H());
+
+    // Glow edge
+    ctx.shadowColor = '#ff0028';
+    ctx.shadowBlur = 30 + pulse * 20;
+    ctx.fillStyle = `rgba(255,60,60,${0.6 + pulse*0.4})`;
+    ctx.fillRect(wall.x - 3, 0, 6, CANVAS_H());
+    ctx.shadowBlur = 0;
+
+    // Warning text on wall
+    ctx.save();
+    ctx.translate(wall.x, CANVAS_H() / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillStyle = `rgba(255,255,255,${0.5 + pulse*0.5})`;
+    ctx.font = `bold 13px 'Orbitron', monospace`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('⚠ NO PASSING ⚠', 0, 0);
+    ctx.restore();
+
+    // Warning skulls along wall
+    ctx.font = '18px serif';
+    ctx.textAlign = 'center';
+    ctx.globalAlpha = 0.6 + pulse * 0.4;
+    for(let y = 40; y < CANVAS_H(); y += 60) {
+      ctx.fillText('💀', wall.x, y);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // === BIRD — clean single emoji, no flip, no dots ===
+  ctx.save();
+  ctx.translate(bird.x, bird.y);
+  if(bird.is3d) {
+    ctx.shadowColor = '#00f5ff';
+    ctx.shadowBlur = 20 + Math.sin(frame*0.1)*10;
+  }
+  const birdSize = bird.size * 1.8;
+  ctx.font = `${birdSize}px serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(bird.emoji, 0, 0);
+  ctx.shadowBlur = 0;
+  ctx.restore();
+
+  // === SCORE 25000 WARNING HUD ===
+  if(currentLevel === 'veryhard' && score >= 25000) {
+    const pulse = Math.sin(frame * 0.15) * 0.5 + 0.5;
+    ctx.fillStyle = `rgba(255,0,40,${0.12 + pulse*0.08})`;
+    ctx.fillRect(0, 0, CANVAS_W(), CANVAS_H());
+    ctx.font = `bold 11px 'Orbitron', monospace`;
+    ctx.fillStyle = `rgba(255,80,80,${0.6 + pulse*0.4})`;
+    ctx.textAlign = 'center';
+    ctx.fillText('⚠  IMPOSSIBLE ZONE  ⚠', CANVAS_W()/2, 52);
+    ctx.textAlign = 'left';
+  }
+
+  // Ground line
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.fillRect(0, CANVAS_H()-20, CANVAS_W(), 20);
+}
+
+function drawBackground(bgId) {
+  const W = CANVAS_W(), H = CANVAS_H();
+  let grad;
+  switch(bgId) {
+    case 'bg_day':
+      grad = ctx.createLinearGradient(0,0,0,H);
+      grad.addColorStop(0,'#1a6bcc'); grad.addColorStop(0.6,'#5ba3f5'); grad.addColorStop(1,'#90ee90');
+      ctx.fillStyle=grad; ctx.fillRect(0,0,W,H);
+      // Clouds
+      drawCloud(ctx, 100+Math.sin(frame*0.003)*20, 80, 0.8);
+      drawCloud(ctx, 400+Math.sin(frame*0.004)*15, 120, 1);
+      drawCloud(ctx, W*0.7+Math.sin(frame*0.002)*25, 60, 0.6);
+      break;
+    case 'bg_night':
+      grad = ctx.createLinearGradient(0,0,0,H);
+      grad.addColorStop(0,'#020211'); grad.addColorStop(0.7,'#0a0a2e'); grad.addColorStop(1,'#1a0a2e');
+      ctx.fillStyle=grad; ctx.fillRect(0,0,W,H);
+      drawStars(ctx, frame);
+      drawMoon(ctx, W*0.8, 80);
+      break;
+    case 'bg_sunset':
+      grad = ctx.createLinearGradient(0,0,0,H);
+      grad.addColorStop(0,'#ff6b35'); grad.addColorStop(0.4,'#f7931e'); grad.addColorStop(0.7,'#ff006e'); grad.addColorStop(1,'#1a0533');
+      ctx.fillStyle=grad; ctx.fillRect(0,0,W,H);
+      drawSun(ctx, W*0.5, 100);
+      break;
+    case 'bg_storm':
+      grad = ctx.createLinearGradient(0,0,0,H);
+      grad.addColorStop(0,'#1a1a2e'); grad.addColorStop(0.5,'#16213e'); grad.addColorStop(1,'#0f3460');
+      ctx.fillStyle=grad; ctx.fillRect(0,0,W,H);
+      if(Math.random()<0.002) drawLightning(ctx, W, H);
+      drawRain(ctx, frame, W, H);
+      break;
+    case 'bg_space':
+      grad = ctx.createLinearGradient(0,0,0,H);
+      grad.addColorStop(0,'#000005'); grad.addColorStop(0.5,'#020014'); grad.addColorStop(1,'#050505');
+      ctx.fillStyle=grad; ctx.fillRect(0,0,W,H);
+      drawStars(ctx, frame);
+      drawNebula(ctx, W, H, frame);
+      break;
+    case 'bg_neon':
+      grad = ctx.createLinearGradient(0,0,0,H);
+      grad.addColorStop(0,'#0d0d0d'); grad.addColorStop(0.5,'#0a0020'); grad.addColorStop(1,'#000015');
+      ctx.fillStyle=grad; ctx.fillRect(0,0,W,H);
+      drawNeonCity(ctx, W, H, frame);
+      break;
+    case 'bg_aurora':
+      grad = ctx.createLinearGradient(0,0,0,H);
+      grad.addColorStop(0,'#001a33'); grad.addColorStop(1,'#000d1a');
+      ctx.fillStyle=grad; ctx.fillRect(0,0,W,H);
+      drawAurora(ctx, W, H, frame);
+      break;
+    case 'bg_volcano':
+      grad = ctx.createLinearGradient(0,0,0,H);
+      grad.addColorStop(0,'#1a0000'); grad.addColorStop(0.5,'#330000'); grad.addColorStop(1,'#660000');
+      ctx.fillStyle=grad; ctx.fillRect(0,0,W,H);
+      drawLava(ctx, W, H, frame);
+      break;
+    default:
+      ctx.fillStyle='#1a6bcc'; ctx.fillRect(0,0,W,H);
+  }
+}
+
+function drawCloud(ctx, x, y, scale) {
+  ctx.save(); ctx.globalAlpha=0.7;
+  ctx.fillStyle='white';
+  [[0,0,30],[30,-10,25],[-30,-5,20],[60,0,28],[-60,5,18]].forEach(([dx,dy,r])=>{
+    ctx.beginPath(); ctx.arc(x+dx*scale, y+dy*scale, r*scale, 0, Math.PI*2); ctx.fill();
+  });
+  ctx.restore();
+}
+
+function drawMoon(ctx, x, y) {
+  ctx.save();
+  ctx.fillStyle='#fffde7';
+  ctx.shadowColor='#fffde7'; ctx.shadowBlur=30;
+  ctx.beginPath(); ctx.arc(x, y, 30, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle='#0a0a2e';
+  ctx.beginPath(); ctx.arc(x+10, y-5, 25, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+
+function drawSun(ctx, x, y) {
+  ctx.save();
+  ctx.fillStyle='#ffd700'; ctx.shadowColor='#ffd700'; ctx.shadowBlur=60;
+  ctx.beginPath(); ctx.arc(x, y, 40, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+
+function drawStars(ctx, frame) {
+  ctx.fillStyle='rgba(255,255,255,0.8)';
+  for(let i=0;i<80;i++) {
+    const x = (i*137.5)%canvas.width;
+    const y = (i*79.3)%canvas.height*0.6;
+    const pulse = Math.sin(frame*0.05+i)*0.5+0.5;
+    ctx.globalAlpha = 0.4+pulse*0.6;
+    ctx.beginPath(); ctx.arc(x, y, 1+pulse*0.5, 0, Math.PI*2); ctx.fill();
+  }
+  ctx.globalAlpha=1;
+}
+
+function drawNebula(ctx, W, H, frame) {
+  const g = ctx.createRadialGradient(W*0.3, H*0.2, 0, W*0.3, H*0.2, W*0.4);
+  g.addColorStop(0,'rgba(100,0,200,0.1)'); g.addColorStop(1,'transparent');
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  const g2 = ctx.createRadialGradient(W*0.7, H*0.4, 0, W*0.7, H*0.4, W*0.3);
+  g2.addColorStop(0,'rgba(0,100,200,0.1)'); g2.addColorStop(1,'transparent');
+  ctx.fillStyle=g2; ctx.fillRect(0,0,W,H);
+}
+
+function drawNeonCity(ctx, W, H, frame) {
+  const buildings = [
+    {x:0,w:60,h:200},{x:70,w:80,h:150},{x:160,w:50,h:250},{x:220,w:90,h:180},
+    {x:320,w:60,h:220},{x:390,w:70,h:160},{x:470,w:55,h:300}
+  ];
+  buildings.forEach(b => {
+    const bx = (b.x - frame*0.2 + W*2) % (W+200) - 100;
+    ctx.fillStyle='#0a0a1a'; ctx.fillRect(bx, H-b.h, b.w, b.h);
+    ctx.strokeStyle='rgba(0,245,255,0.3)'; ctx.lineWidth=1;
+    ctx.strokeRect(bx, H-b.h, b.w, b.h);
+    for(let r=0;r<Math.floor(b.h/20);r++) {
+      for(let c=0;c<Math.floor(b.w/15);c++) {
+        if(Math.random()>0.7) {
+          ctx.fillStyle=Math.random()>0.5?'rgba(0,245,255,0.6)':'rgba(255,0,110,0.6)';
+          ctx.fillRect(bx+c*15+3, H-b.h+r*20+3, 8, 10);
+        }
+      }
+    }
+  });
+}
+
+function drawRain(ctx, frame, W, H) {
+  ctx.strokeStyle='rgba(180,200,255,0.3)'; ctx.lineWidth=1;
+  for(let i=0;i<100;i++) {
+    const x = (i*73 + frame*2) % W;
+    const y = (i*97 + frame*5) % H;
+    ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x-2,y+10); ctx.stroke();
+  }
+}
+
+function drawLightning(ctx, W, H) {
+  ctx.strokeStyle='rgba(200,220,255,0.8)'; ctx.lineWidth=2;
+  let x=Math.random()*W, y=0;
+  ctx.beginPath(); ctx.moveTo(x,y);
+  while(y<H) { x+=(Math.random()-0.5)*30; y+=30; ctx.lineTo(x,y); }
+  ctx.stroke();
+}
+
+function drawAurora(ctx, W, H, frame) {
+  const colors=['rgba(0,255,120,0.15)','rgba(0,180,255,0.12)','rgba(150,0,255,0.1)'];
+  colors.forEach((c,i) => {
+    ctx.beginPath();
+    ctx.moveTo(0, H*0.2);
+    for(let x=0;x<=W;x+=10) {
+      const y = H*0.15 + Math.sin(x*0.01+frame*0.02+i*2)*80 + Math.sin(x*0.005+frame*0.01+i)*50;
+      ctx.lineTo(x, y);
+    }
+    ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath();
+    ctx.fillStyle=c; ctx.fill();
+  });
+}
+
+function drawLava(ctx, W, H, frame) {
+  // Lava glow at bottom
+  const g = ctx.createLinearGradient(0, H*0.7, 0, H);
+  g.addColorStop(0,'transparent');
+  g.addColorStop(0.5,'rgba(255,50,0,0.3)');
+  g.addColorStop(1,'rgba(255,100,0,0.6)');
+  ctx.fillStyle=g; ctx.fillRect(0,H*0.7,W,H*0.3);
+  // Embers
+  for(let i=0;i<30;i++) {
+    const ex=(i*137+frame*0.5)%W;
+    const ey=H-(i*79+frame*2)%300;
+    ctx.globalAlpha=Math.random()*0.8;
+    ctx.fillStyle='#ff4500';
+    ctx.beginPath(); ctx.arc(ex,ey,Math.random()*3+1,0,Math.PI*2); ctx.fill();
+  }
+  ctx.globalAlpha=1;
+}
+
+function drawPipe(p, pipeData, lv) {
+  const W = 60;
+  const pipeColor = getPipeColor(pipeData.id);
+  const glowColor = getPipeGlow(pipeData.id);
+  
+  ctx.save();
+  if(glowColor) { ctx.shadowColor=glowColor; ctx.shadowBlur=15; }
+  
+  // Top pipe
+  const topH = p.gapY;
+  const grad1 = ctx.createLinearGradient(p.x-W/2,0,p.x+W/2,0);
+  grad1.addColorStop(0,pipeColor[0]); grad1.addColorStop(0.5,pipeColor[1]); grad1.addColorStop(1,pipeColor[0]);
+  ctx.fillStyle=grad1;
+  ctx.fillRect(p.x-W/2, 0, W, topH);
+  // Cap
+  ctx.fillRect(p.x-W/2-8, topH-20, W+16, 20);
+  
+  // Bottom pipe
+  const botY = p.gapY + p.gapSize;
+  const botH = CANVAS_H() - botY;
+  ctx.fillStyle=grad1;
+  ctx.fillRect(p.x-W/2, botY, W, botH);
+  // Cap
+  ctx.fillRect(p.x-W/2-8, botY, W+16, 20);
+  
+  ctx.shadowBlur=0;
+  ctx.restore();
+}
+
+function getPipeColor(id) {
+  const map = {
+    pipe_green: ['#1a7a1a','#2db52d'],
+    pipe_gold: ['#b8860b','#ffd700'],
+    pipe_crystal: ['#4488aa','#aaddff'],
+    pipe_fire: ['#8b0000','#ff4500'],
+    pipe_neon: ['#8b0057','#ff006e'],
+    pipe_ice: ['#2266aa','#aaddff'],
+  };
+  return map[id] || map.pipe_green;
+}
+
+function getPipeGlow(id) {
+  const map = {
+    pipe_gold: '#ffd700', pipe_crystal: '#aaddff',
+    pipe_fire: '#ff4500', pipe_neon: '#ff006e', pipe_ice: '#00d4ff',
+  };
+  return map[id] || null;
+}
+
+function endGame() {
+  gameRunning = false;
+  bird.alive = false;
+  soundDie();
+  stopBgMusic();
+  
+  const ud = getUserData();
+  const level = currentLevel;
+  const lv = LEVELS[level];
+  
+  // Update best score
+  if(score > ud.scores[level]) ud.scores[level] = score;
+  
+  // Add points (1 point per 1 score point, multiplied by level multiplier)
+  const ptsEarned = Math.floor(score * (level==='easy'?1:level==='hard'?2:5));
+  ud.points = (ud.points || 0) + ptsEarned;
+  
+  // Check unlocks
+  const unlockNotifs = [];
+  const checkAndUnlock = (items, key) => {
+    items.forEach(item => {
+      if(!ud[key].includes(item.id) && checkUnlock(item, ud)) {
+        ud[key].push(item.id);
+        unlockNotifs.push(`🎉 UNLOCKED: ${item.emoji} ${item.name}!`);
+      }
+    });
+  };
+  checkAndUnlock(BIRDS, 'unlockedBirds');
+  checkAndUnlock(BACKGROUNDS, 'unlockedBgs');
+  checkAndUnlock(PIPES, 'unlockedPipes');
+  if(unlockNotifs.length > 0) soundUnlock();
+
+  saveUserData(ud);
+
+  // Update high scores
+  const hs = getHighScores();
+  if(!hs[level]) hs[level]={};
+  if(!hs[level][currentUser] || score > hs[level][currentUser]) {
+    hs[level][currentUser] = score;
+  }
+  saveHighScores(hs);
+
+  // Update menu points
+  document.getElementById('menu-points').textContent = ud.points;
+  
+  // Show game over
+  document.getElementById('go-score').textContent = score.toLocaleString();
+  document.getElementById('go-best').textContent = ud.scores[level].toLocaleString();
+  document.getElementById('go-pts').textContent = `+${ptsEarned} points earned!`;
+  
+  const notifDiv = document.getElementById('unlock-notifs');
+  notifDiv.innerHTML = unlockNotifs.map(n=>`<div class="unlock-notif">${n}</div>`).join('');
+  
+  document.getElementById('gameover-overlay').classList.add('visible');
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║                     STARFIELD BG                         ║
+// ╚══════════════════════════════════════════════════════════╝
+
+function initStarfield() {
+  const c = document.getElementById('starfield');
+  const cx = c.getContext('2d');
+  c.width = window.innerWidth; c.height = window.innerHeight;
+  
+  const stars = Array.from({length:150}, ()=>({
+    x: Math.random()*c.width, y:Math.random()*c.height,
+    r: Math.random()*1.5+0.3,
+    d: 1.5+Math.random()*3,
+  }));
+  
+  stars.forEach(s => {
+    const div = document.createElement('div');
+    div.className='star';
+    div.style.cssText=`left:${s.x}px;top:${s.y}px;width:${s.r*2}px;height:${s.r*2}px;--d:${s.d}s;animation-delay:${Math.random()*3}s;`;
+    document.body.appendChild(div);
+  });
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║                   SCREEN OVERRIDES                       ║
+// ╚══════════════════════════════════════════════════════════╝
+
+const _showScreen = showScreen;
+const showScreenOrig = showScreen;
+
+// Patch leaderboard
+document.getElementById('screen-leaderboard').addEventListener('transitionend',()=>{});
+
+function showMenuSection(id) {
+  if(id==='screen-leaderboard') { showLeaderboard(); }
+  else { showScreen(id); }
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║                    SOUND ENGINE                          ║
+// ╚══════════════════════════════════════════════════════════╝
+
+let audioCtx = null;
+let soundEnabled = true;
+let bgMusicNode = null;
+let bgMusicGain = null;
+
+function getAudioCtx() {
+  if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if(audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+function toggleSound() {
+  soundEnabled = !soundEnabled;
+  document.getElementById('sound-btn').textContent = soundEnabled ? '🔊' : '🔇';
+  if(!soundEnabled) stopBgMusic();
+  else startBgMusic();
+}
+
+// ── Synth helpers ──
+function playTone(freq, type, duration, gainVal, startTime, fadeOut=true) {
+  if(!soundEnabled) return;
+  const ac = getAudioCtx();
+  const osc = ac.createOscillator();
+  const gain = ac.createGain();
+  osc.connect(gain); gain.connect(ac.destination);
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, startTime);
+  gain.gain.setValueAtTime(gainVal, startTime);
+  if(fadeOut) gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+  osc.start(startTime);
+  osc.stop(startTime + duration);
+}
+
+function playNoise(duration, gainVal) {
+  if(!soundEnabled) return;
+  const ac = getAudioCtx();
+  const bufSize = ac.sampleRate * duration;
+  const buf = ac.createBuffer(1, bufSize, ac.sampleRate);
+  const data = buf.getChannelData(0);
+  for(let i=0;i<bufSize;i++) data[i] = Math.random()*2-1;
+  const src = ac.createBufferSource();
+  src.buffer = buf;
+  const gain = ac.createGain();
+  const filter = ac.createBiquadFilter();
+  filter.type = 'bandpass'; filter.frequency.value = 400;
+  src.connect(filter); filter.connect(gain); gain.connect(ac.destination);
+  gain.gain.setValueAtTime(gainVal, ac.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + duration);
+  src.start(); src.stop(ac.currentTime + duration);
+}
+
+// ── Game sounds ──
+function soundFlap() {
+  if(!soundEnabled) return;
+  const ac = getAudioCtx();
+  const t = ac.currentTime;
+  playTone(520, 'sine', 0.08, 0.18, t);
+  playTone(640, 'sine', 0.06, 0.10, t + 0.03);
+}
+
+function soundScore() {
+  if(!soundEnabled) return;
+  const ac = getAudioCtx();
+  const t = ac.currentTime;
+  playTone(880,  'sine', 0.07, 0.15, t);
+  playTone(1100, 'sine', 0.07, 0.15, t + 0.07);
+  playTone(1320, 'sine', 0.10, 0.18, t + 0.14);
+}
+
+function soundDie() {
+  if(!soundEnabled) return;
+  const ac = getAudioCtx();
+  const t = ac.currentTime;
+  // Falling tone + noise burst
+  const osc = ac.createOscillator();
+  const gain = ac.createGain();
+  osc.connect(gain); gain.connect(ac.destination);
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(400, t);
+  osc.frequency.exponentialRampToValueAtTime(60, t + 0.5);
+  gain.gain.setValueAtTime(0.25, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+  osc.start(t); osc.stop(t + 0.5);
+  playNoise(0.3, 0.12);
+}
+
+function soundWallHit() {
+  if(!soundEnabled) return;
+  const ac = getAudioCtx();
+  const t = ac.currentTime;
+  playTone(120, 'square', 0.15, 0.2, t);
+  playTone(90,  'square', 0.12, 0.15, t + 0.05);
+}
+
+function soundUnlock() {
+  if(!soundEnabled) return;
+  const ac = getAudioCtx();
+  const t = ac.currentTime;
+  [523,659,784,1047].forEach((f,i) => playTone(f,'sine',0.15,0.15, t+i*0.1));
+}
+
+function soundButton() {
+  if(!soundEnabled) return;
+  const ac = getAudioCtx();
+  playTone(440, 'sine', 0.06, 0.1, ac.currentTime);
+}
+
+// ── Background music ──
+function startBgMusic() {
+  if(!soundEnabled) return;
+  stopBgMusic();
+  const ac = getAudioCtx();
+
+  bgMusicGain = ac.createGain();
+  bgMusicGain.gain.value = 0.06;
+  bgMusicGain.connect(ac.destination);
+
+  // Simple looping arpeggio melody
+  const notes = [261,329,392,523,392,329,261,220,261,329,392,261,329,392,523,392];
+  const stepTime = 0.22;
+  let step = 0;
+
+  function scheduleNote() {
+    if(!soundEnabled || !bgMusicGain) return;
+    const t = ac.currentTime;
+    const freq = notes[step % notes.length];
+
+    const osc = ac.createOscillator();
+    const env = ac.createGain();
+    osc.connect(env); env.connect(bgMusicGain);
+    osc.type = 'triangle';
+    osc.frequency.value = freq;
+    env.gain.setValueAtTime(0.8, t);
+    env.gain.exponentialRampToValueAtTime(0.001, t + stepTime * 0.9);
+    osc.start(t); osc.stop(t + stepTime * 0.9);
+
+    step++;
+    bgMusicNode = setTimeout(scheduleNote, stepTime * 1000);
+  }
+  scheduleNote();
+}
+
+function stopBgMusic() {
+  if(bgMusicNode) { clearTimeout(bgMusicNode); bgMusicNode = null; }
+  if(bgMusicGain) { bgMusicGain.disconnect(); bgMusicGain = null; }
+}
+
+
+
+// Override menu buttons to use patched version
+document.querySelector('[onclick="showScreen(\'screen-leaderboard\')"]').onclick = () => showLeaderboard();
+
+initStarfield();
+
+// Try auto-login from session
+const savedUser = sessionStorage.getItem('flappyverse_user');
+if(savedUser) {
+  const users = getUsers();
+  if(users[savedUser]) {
+    currentUser = savedUser;
+    openMenu();
+  }
+}
+
+// Save session on login
+const _openMenu = openMenu;
+window.openMenu = function() {
+  sessionStorage.setItem('flappyverse_user', currentUser);
+  _openMenu();
+};
+
+const _doLogout = doLogout;
+window.doLogout = function() {
+  sessionStorage.removeItem('flappyverse_user');
+  currentUser = null;
+  showScreen('screen-login');
+};
+
+</script>
+</body>
+</html>
